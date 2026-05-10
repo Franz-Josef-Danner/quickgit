@@ -4,9 +4,12 @@ Wenn sich `.py`-Dateien beim Doppelklick im Editor öffnen, ist die Dateizuordnu
 
 ## Empfohlener Weg (ohne Umstellen der globalen Dateizuordnung)
 1. Doppelklicke `start_quickgit_ui.bat`.
-2. Die QuickGit-Oberfläche startet direkt.
+2. Die Batch-Datei versucht automatisch in dieser Reihenfolge zu starten:
+   - `pyw quickgit_ui.pyw`
+   - `pythonw quickgit_ui.pyw`
+   - `python quickgit_ui.pyw` (mit Konsole)
 
-Das ist der sicherste Weg, weil er unabhängig davon funktioniert, welches Programm global mit `.py` verknüpft ist.
+So funktioniert der Start auch dann, wenn `pyw` auf deinem System fehlt.
 
 ## Alternative: `.pyw` mit Python verknüpfen
 1. Rechtsklick auf `quickgit_ui.pyw` → **Öffnen mit** → **Andere App auswählen**.
