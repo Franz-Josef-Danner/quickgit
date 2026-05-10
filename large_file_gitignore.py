@@ -32,6 +32,7 @@ class LargeFileGitignoreApp:
         
         # Erstelle GUI-Elemente
         self.selected_folder = None
+        self.folder_confirmed = False
         self.large_files_by_folder = {}
         self.gitignore_count = 0
         self.size_limit_mb = 100  # Standardwert
@@ -72,7 +73,16 @@ class LargeFileGitignoreApp:
             width=30
         )
         select_button.pack(side="left", padx=5)
-        
+
+        self.confirm_button = ttk.Button(
+            folder_frame,
+            text="✅ Ordner bestätigen",
+            command=self.confirm_folder,
+            state="disabled",
+            width=20
+        )
+        self.confirm_button.pack(side="left", padx=5)
+
         # Status-Anzeige
         self.status_label = ttk.Label(
             folder_frame,
@@ -148,15 +158,35 @@ class LargeFileGitignoreApp:
                 text=f"✅ {folder}",
                 foreground="green"
             )
-            self.scan_button.config(state="normal")
+            self.folder_confirmed = False
+            self.confirm_button.config(state="normal")
+            self.scan_button.config(state="disabled")
             self.result_text.delete(*self.result_text.get_children())
             self.large_files_by_folder = {}
             self.gitignore_count = 0
     
+
+    def confirm_folder(self):
+        """Bestätigt den ausgewählten Ordner und aktiviert den Start-Button"""
+        if not self.selected_folder:
+            messagebox.showwarning("Hinweis", "Bitte zuerst einen Ordner auswählen.")
+            return
+
+        self.folder_confirmed = True
+        self.scan_button.config(state="normal")
+        self.status_label.config(
+            text=f"✅ Bereit: {self.selected_folder}",
+            foreground="green"
+        )
+
     def start_scan(self):
         """Startet den Scan in einem separaten Thread"""
         if not self.selected_folder:
             messagebox.showwarning("Fehler", "Bitte wählen Sie erst einen Ordner aus!")
+            return
+
+        if not self.folder_confirmed:
+            messagebox.showwarning("Hinweis", "Bitte den ausgewählten Ordner zuerst bestätigen.")
             return
         
         # Validiere die Eingabe
