@@ -21,7 +21,7 @@ class LargeFileGitignoreApp:
         """Initialisiert die Anwendung"""
         self.root = root
         self.root.title("QuickGit - Large File .gitignore Generator")
-        self.root.geometry("650x500")
+        self.root.geometry("700x620")
         self.root.resizable(False, False)
         
         # Versuche, Icon zu setzen (optional)
@@ -32,7 +32,6 @@ class LargeFileGitignoreApp:
         
         # Erstelle GUI-Elemente
         self.selected_folder = None
-        self.folder_confirmed = False
         self.large_files_by_folder = {}
         self.gitignore_count = 0
         self.size_limit_mb = 100  # Standardwert
@@ -74,15 +73,6 @@ class LargeFileGitignoreApp:
         )
         select_button.pack(side="left", padx=5)
 
-        self.confirm_button = ttk.Button(
-            folder_frame,
-            text="✅ Ordner bestätigen",
-            command=self.confirm_folder,
-            state="disabled",
-            width=20
-        )
-        self.confirm_button.pack(side="left", padx=5)
-
         # Status-Anzeige
         self.status_label = ttk.Label(
             folder_frame,
@@ -105,6 +95,14 @@ class LargeFileGitignoreApp:
         
         mb_label = ttk.Label(size_frame, text="MB (z.B. 50, 100, 500)")
         mb_label.pack(side="left", padx=5)
+
+        self.scan_button = ttk.Button(
+            size_frame,
+            text="▶ Scan starten",
+            command=self.start_scan,
+            state="disabled"
+        )
+        self.scan_button.pack(side="right", padx=5)
         
         # Fortschrittsanzeige
         self.progress_bar = ttk.Progressbar(
@@ -142,14 +140,6 @@ class LargeFileGitignoreApp:
         button_frame = ttk.Frame(self.root)
         button_frame.pack(pady=10)
         
-        self.scan_button = ttk.Button(
-            button_frame,
-            text="🔍 Scannen & .gitignore erstellen",
-            command=self.start_scan,
-            state="disabled"
-        )
-        self.scan_button.pack(side="left", padx=5)
-        
         close_button = ttk.Button(
             button_frame,
             text="Beenden",
@@ -175,29 +165,12 @@ class LargeFileGitignoreApp:
                 text=f"✅ {folder}",
                 foreground="green"
             )
-            self.folder_confirmed = False
-            self.confirm_button.config(state="normal")
-            self.scan_button.config(state="disabled")
+            self.scan_button.config(state="normal")
             self.result_text.delete(*self.result_text.get_children())
             self.large_files_by_folder = {}
             self.gitignore_count = 0
             self.append_log(f"Ordner ausgewählt: {folder}")
-            self.append_log("Bitte Ordner bestätigen und danach Scan starten.")
-    
-
-    def confirm_folder(self):
-        """Bestätigt den ausgewählten Ordner und aktiviert den Start-Button"""
-        if not self.selected_folder:
-            messagebox.showwarning("Hinweis", "Bitte zuerst einen Ordner auswählen.")
-            return
-
-        self.folder_confirmed = True
-        self.scan_button.config(state="normal")
-        self.status_label.config(
-            text=f"✅ Bereit: {self.selected_folder}",
-            foreground="green"
-        )
-        self.append_log("Ordner bestätigt. Scan kann jetzt gestartet werden.")
+            self.append_log("Scan-Button ist jetzt aktiv. Du kannst den Scan starten.")
 
     def start_scan(self):
         """Startet den Scan in einem separaten Thread"""
@@ -205,10 +178,6 @@ class LargeFileGitignoreApp:
             messagebox.showwarning("Fehler", "Bitte wählen Sie erst einen Ordner aus!")
             return
 
-        if not self.folder_confirmed:
-            messagebox.showwarning("Hinweis", "Bitte den ausgewählten Ordner zuerst bestätigen.")
-            return
-        
         # Validiere die Eingabe
         try:
             self.size_limit_mb = int(self.size_entry.get())
