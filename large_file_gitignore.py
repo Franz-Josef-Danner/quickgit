@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Large File .gitignore Generator
-Ein einfaches Programm für Windows 11, das große Dateien (>100MB) findet
+Ein einfaches Programm für Windows 11, das große Dateien findet
 und automatisch .gitignore Dateien in den jeweiligen Ordnern erstellt.
 """
 
@@ -17,13 +17,11 @@ import threading
 class LargeFileGitignoreApp:
     """Hauptanwendung zur Verwaltung großer Dateien und .gitignore Erstellung"""
     
-    SIZE_LIMIT = 100 * 1024 * 1024  # 100 MB in Bytes
-    
     def __init__(self, root):
         """Initialisiert die Anwendung"""
         self.root = root
-        self.root.title("Large File .gitignore Generator")
-        self.root.geometry("600x400")
+        self.root.title("QuickGit - Large File .gitignore Generator")
+        self.root.geometry("650x500")
         self.root.resizable(False, False)
         
         # Versuche, Icon zu setzen (optional)
@@ -36,6 +34,7 @@ class LargeFileGitignoreApp:
         self.selected_folder = None
         self.large_files_by_folder = {}
         self.gitignore_count = 0
+        self.size_limit_mb = 100  # Standardwert
         
         self.create_widgets()
     
@@ -44,14 +43,14 @@ class LargeFileGitignoreApp:
         # Titel
         title_label = ttk.Label(
             self.root, 
-            text="Ordner-Scanner für große Dateien",
+            text="QuickGit - Ordner-Scanner für große Dateien",
             font=("Arial", 14, "bold")
         )
         title_label.pack(pady=10)
         
         # Beschreibung
         description_text = (
-            "Dieses Programm findet alle Dateien größer als 100 MB\n"
+            "Dieses Programm findet alle Dateien größer als die angegebene Größe\n"
             "und erstellt .gitignore Dateien in den jeweiligen Ordnern."
         )
         desc_label = ttk.Label(
@@ -62,25 +61,42 @@ class LargeFileGitignoreApp:
         )
         desc_label.pack(pady=5)
         
-        # Ordner-Auswahl Button
+        # Ordner-Auswahl
+        folder_frame = ttk.LabelFrame(self.root, text="Ordner auswählen", padding=10)
+        folder_frame.pack(pady=10, padx=10, fill="x")
+        
         select_button = ttk.Button(
-            self.root,
-            text="📁 Ordner auswählen",
-            command=self.select_folder
+            folder_frame,
+            text="📁 Ordner durchsuchen",
+            command=self.select_folder,
+            width=30
         )
-        select_button.pack(pady=20)
+        select_button.pack(side="left", padx=5)
         
         # Status-Anzeige
         self.status_label = ttk.Label(
-            self.root,
+            folder_frame,
             text="Kein Ordner ausgewählt",
-            font=("Arial", 10),
+            font=("Arial", 9),
             foreground="gray"
         )
-        self.status_label.pack(pady=5)
+        self.status_label.pack(side="left", padx=10)
+        
+        # Dateigröße-Eingabe
+        size_frame = ttk.LabelFrame(self.root, text="Dateigröße (optional)", padding=10)
+        size_frame.pack(pady=10, padx=10, fill="x")
+        
+        size_label = ttk.Label(size_frame, text="Mindestgröße in MB:")
+        size_label.pack(side="left", padx=5)
+        
+        self.size_entry = ttk.Entry(size_frame, width=10)
+        self.size_entry.insert(0, "100")  # Standardwert
+        self.size_entry.pack(side="left", padx=5)
+        
+        mb_label = ttk.Label(size_frame, text="MB (z.B. 50, 100, 500)")
+        mb_label.pack(side="left", padx=5)
         
         # Fortschrittsanzeige
-        self.progress_var = ttk.Variable()
         self.progress_bar = ttk.Progressbar(
             self.root,
             mode="indeterminate",
@@ -89,11 +105,8 @@ class LargeFileGitignoreApp:
         self.progress_bar.pack(pady=10)
         
         # Text-Ausgabe für Ergebnisse
-        self.result_frame = ttk.Frame(self.root)
+        self.result_frame = ttk.LabelFrame(self.root, text="Ergebnisse", padding=5)
         self.result_frame.pack(pady=10, padx=10, fill="both", expand=True)
-        
-        result_label = ttk.Label(self.result_frame, text="Ergebnisse:")
-        result_label.pack(anchor="w")
         
         # Scrollbare Text-Anzeige
         scrollbar = ttk.Scrollbar(self.result_frame)
@@ -101,7 +114,7 @@ class LargeFileGitignoreApp:
         
         self.result_text = ttk.Treeview(
             self.result_frame,
-            height=10,
+            height=8,
             yscrollcommand=scrollbar.set
         )
         scrollbar.config(command=self.result_text.yview)
@@ -132,7 +145,7 @@ class LargeFileGitignoreApp:
         if folder:
             self.selected_folder = folder
             self.status_label.config(
-                text=f"Ausgewählt: {folder}",
+                text=f"✅ {folder}",
                 foreground="green"
             )
             self.scan_button.config(state="normal")
@@ -144,6 +157,15 @@ class LargeFileGitignoreApp:
         """Startet den Scan in einem separaten Thread"""
         if not self.selected_folder:
             messagebox.showwarning("Fehler", "Bitte wählen Sie erst einen Ordner aus!")
+            return
+        
+        # Validiere die Eingabe
+        try:
+            self.size_limit_mb = int(self.size_entry.get())
+            if self.size_limit_mb <= 0:
+                raise ValueError("Größe muss größer als 0 sein")
+        except ValueError:
+            messagebox.showerror("Fehler", "Bitte geben Sie eine gültige Zahl ein (z.B. 100)")
             return
         
         self.scan_button.config(state="disabled")
@@ -158,7 +180,7 @@ class LargeFileGitignoreApp:
         try:
             self.large_files_by_folder = {}
             
-            # Finde alle Dateien größer als 100 MB
+            # Finde alle Dateien größer als die angegebene Größe
             self.find_large_files(self.selected_folder)
             
             # Erstelle .gitignore Dateien
@@ -186,6 +208,8 @@ class LargeFileGitignoreApp:
     
     def find_large_files(self, start_path):
         """Durchsucht den Ordner rekursiv nach großen Dateien"""
+        size_limit_bytes = self.size_limit_mb * 1024 * 1024
+        
         try:
             for root, dirs, files in os.walk(start_path):
                 # Ignoriere .git Ordner
@@ -197,7 +221,7 @@ class LargeFileGitignoreApp:
                     file_path = os.path.join(root, file)
                     try:
                         file_size = os.path.getsize(file_path)
-                        if file_size > self.SIZE_LIMIT:
+                        if file_size > size_limit_bytes:
                             large_files.append(file)
                     except (OSError, IOError):
                         pass
@@ -246,7 +270,7 @@ class LargeFileGitignoreApp:
         
         # Zeige neue Ergebnisse
         if not self.large_files_by_folder:
-            self.result_text.insert("", "end", text="Keine Dateien größer als 100 MB gefunden.")
+            self.result_text.insert("", "end", text=f"Keine Dateien größer als {self.size_limit_mb} MB gefunden.")
             return
         
         for folder in sorted(self.large_files_by_folder.keys()):
