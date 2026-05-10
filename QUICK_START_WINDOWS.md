@@ -26,3 +26,13 @@ Danach kannst du `quickgit_ui.pyw` per Doppelklick starten (ohne Konsolenfenster
 
 ## Hinweis zur `.py`-Verknüpfung
 Du kannst auch `.py` wieder auf Python umstellen, aber das betrifft **alle** Python-Dateien systemweit. Deshalb ist `start_quickgit_ui.bat` in der Praxis oft die bessere Lösung.
+
+## Wenn `quickgit_ui.pyw` kurz aufpoppt und sofort wieder schließt
+Das bedeutet fast immer: Es gab einen Startfehler im Python-Code.
+
+Neu in diesem Projekt: `quickgit_ui.pyw` schreibt bei einem Absturz automatisch `quickgit_error.log` in denselben Ordner und zeigt eine Windows-Fehlermeldung.
+
+Bitte in diesem Fall:
+1. `quickgit_error.log` öffnen,
+2. den Inhalt kopieren,
+3. an den Entwickler weitergeben.
