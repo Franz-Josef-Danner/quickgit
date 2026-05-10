@@ -5,7 +5,7 @@
 import subprocess
 import sys
 import threading
-from tkinter import Tk, messagebox, ttk
+from tkinter import Tk, StringVar, messagebox, ttk
 
 
 class QuickGitLauncher:
@@ -17,7 +17,7 @@ class QuickGitLauncher:
         self.root.geometry("560x320")
         self.root.resizable(False, False)
 
-        self.status_var = ttk.StringVar(value="Bereit")
+        self.status_var = StringVar(value="Bereit")
         self.build_running = False
 
         self._create_widgets()
