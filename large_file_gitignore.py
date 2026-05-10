@@ -9,7 +9,7 @@ und automatisch .gitignore Dateien in den jeweiligen Ordnern erstellt.
 import os
 import sys
 from pathlib import Path
-from tkinter import Tk, filedialog, messagebox
+from tkinter import Tk, Text, filedialog, messagebox
 from tkinter import ttk
 import threading
 
@@ -113,7 +113,15 @@ class LargeFileGitignoreApp:
             length=400
         )
         self.progress_bar.pack(pady=10)
-        
+
+        # Log-Ausgabe
+        log_frame = ttk.LabelFrame(self.root, text="Log", padding=5)
+        log_frame.pack(pady=(0, 10), padx=10, fill="x")
+
+        self.log_text = Text(log_frame, height=4, wrap="word")
+        self.log_text.pack(fill="x")
+        self.log_text.config(state="disabled")
+
         # Text-Ausgabe für Ergebnisse
         self.result_frame = ttk.LabelFrame(self.root, text="Ergebnisse", padding=5)
         self.result_frame.pack(pady=10, padx=10, fill="both", expand=True)
@@ -148,7 +156,16 @@ class LargeFileGitignoreApp:
             command=self.root.quit
         )
         close_button.pack(side="left", padx=5)
+
+        self.append_log("Anwendung gestartet. Bitte Ordner auswählen.")
     
+    def append_log(self, message):
+        """Schreibt eine Zeile in die Log-Ausgabe"""
+        self.log_text.config(state="normal")
+        self.log_text.insert("end", f"{message}\n")
+        self.log_text.see("end")
+        self.log_text.config(state="disabled")
+
     def select_folder(self):
         """Öffnet den Ordner-Auswahldialog"""
         folder = filedialog.askdirectory(title="Wählen Sie einen Ordner aus")
@@ -164,6 +181,8 @@ class LargeFileGitignoreApp:
             self.result_text.delete(*self.result_text.get_children())
             self.large_files_by_folder = {}
             self.gitignore_count = 0
+            self.append_log(f"Ordner ausgewählt: {folder}")
+            self.append_log("Bitte Ordner bestätigen und danach Scan starten.")
     
 
     def confirm_folder(self):
@@ -178,6 +197,7 @@ class LargeFileGitignoreApp:
             text=f"✅ Bereit: {self.selected_folder}",
             foreground="green"
         )
+        self.append_log("Ordner bestätigt. Scan kann jetzt gestartet werden.")
 
     def start_scan(self):
         """Startet den Scan in einem separaten Thread"""
@@ -200,6 +220,7 @@ class LargeFileGitignoreApp:
         
         self.scan_button.config(state="disabled")
         self.progress_bar.start()
+        self.append_log(f"Scan gestartet (Grenze: {self.size_limit_mb} MB)...")
         
         # Starten des Scans in einem Thread, um die GUI nicht einzufrieren
         scan_thread = threading.Thread(target=self.perform_scan)
@@ -228,9 +249,11 @@ class LargeFileGitignoreApp:
                 f".gitignore Dateien erstellt: {self.gitignore_count}"
             )
             self.root.after(0, lambda: messagebox.showinfo("Erfolg", message))
+            self.root.after(0, lambda: self.append_log("Scan erfolgreich abgeschlossen."))
             
         except Exception as e:
             self.root.after(0, lambda: messagebox.showerror("Fehler", f"Ein Fehler ist aufgetreten:\n{str(e)}"))
+            self.root.after(0, lambda: self.append_log(f"Fehler: {e}"))
         
         finally:
             self.progress_bar.stop()
